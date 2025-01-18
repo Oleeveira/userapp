@@ -1,0 +1,20 @@
+{
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "institutionapp-1cc1e",
+          "appId": "1:44253640797:android:6262a3f5171785881635b4",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "institutionapp-1cc1e",
+          "configurations": {
+            "android": "1:44253640797:android:6262a3f5171785881635b4",
+            "ios": "1:44253640797:ios:a5d77da2ea272a9d1635b4"
+          }
+        }
+      }
+    }
+  }

@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "44253640797",
+    "firebase_url": "https://institutionapp-1cc1e-default-rtdb.firebaseio.com",
+    "project_id": "institutionapp-1cc1e",
+    "storage_bucket": "institutionapp-1cc1e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:44253640797:android:6262a3f5171785881635b4",
+        "android_client_info": {
+          "package_name": "Instapp.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6T92AhgTrfyQEXJhtmSK6G5vtUeapsUE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:44253640797:android:2a01242abde3cf671635b4",
+        "android_client_info": {
+          "package_name": "com.example.userapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6T92AhgTrfyQEXJhtmSK6G5vtUeapsUE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
