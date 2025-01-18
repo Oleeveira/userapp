@@ -30,7 +30,7 @@ class RouteNames {
 class AppRountersConfiguration {
   static GoRouter returnRouter() {
     return GoRouter(
-      initialLocation: '/inicial',
+      initialLocation: '/item_register_page',
       routes: [
         GoRoute(
           path: '/inicial',

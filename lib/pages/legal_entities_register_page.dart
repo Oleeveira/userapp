@@ -52,11 +52,11 @@ class _InstitutionRegisterPage extends State<InstitutionRegisterPage> {
         DocumentSnapshot doc = await _firestore.collection('users').doc(user.uid).get();
 
         if (!doc.exists) {
-          // Create a new user document in Firestore
           await _firestore.collection('users').doc(user.uid).set({
             'username': nameController.text,
             'address': addressController.text,
             'number': phoneController.text,
+            'image': '',
             'createdOn': DateTime.now(),
           });
 

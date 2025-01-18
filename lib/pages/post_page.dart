@@ -39,7 +39,7 @@ class _PostPageState extends State<PostPage> {
     );
   }
 
-  Future<void> _submitPost() async {
+  Future<void> submitPost() async {
     if (_selectedImg != null && captionController.text.isNotEmpty) {
       setState(() {
         isLoading = true;
@@ -70,6 +70,7 @@ class _PostPageState extends State<PostPage> {
         });
       }
     }
+    GoRouter.of(context).go('/home');
   }
 
   @override
@@ -85,44 +86,57 @@ class _PostPageState extends State<PostPage> {
         backgroundColor: const Color.fromARGB(255, 3, 32, 106),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            InkWell(
-              onTap: () {
-                pickImageFromGallery();
-              },
-              child: Padding(
-                padding: const EdgeInsets.only(
-                    left: 10.0, right: 10.0, bottom: 10.0, top: 30.0),
-                child: Material(
-                  borderRadius: BorderRadius.circular(25.0),
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 20),
-                    child: Image(
-                      image: (_selectedImg == null)
-                          ? const AssetImage('assets/null.png')
-                          : FileImage(_selectedImg!) as ImageProvider,
-                    ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(25.0),
+                  ),
+                  child: InkWell(
+                    onTap: () {
+                      pickImageFromGallery();
+                    },
+                    child: _selectedImg == null
+                        ? Center(child: Image.asset('assets/null.png'))
+                        : Image.file(_selectedImg!),
                   ),
                 ),
-              ),
+                const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Text("Descreva a postagem:"),
+                ),
+                CustomTextField(),
+                SizedBox(height: 20),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: submitPost,
+                    child: Text('Submit Post'),
+                  ),
+                ),
+              ],
             ),
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Text("Descreva a postagem:"),
-            ),
-            CustomTextField(
-                type: TextInputType.multiline, controller: _controller),
-            ElevatedButton(
-              onPressed: () {
-                _submitPost();
-                GoRouter.of(context).go('/bar_state');
-              },
-              child: const Text('Postar'),
-            ),
-          ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class CustomTextField extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      decoration: InputDecoration(
+        border: OutlineInputBorder(),
+      ),
+      maxLines: 5,
     );
   }
 }
