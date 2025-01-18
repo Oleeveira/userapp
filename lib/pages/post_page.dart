@@ -16,61 +16,62 @@ class PostPage extends StatefulWidget {
 }
 
 class _PostPageState extends State<PostPage> {
-  final currentUser = FirebaseAuth.instance.currentUser!;
   final TextEditingController captionController = TextEditingController();
   File? _selectedImg;
-  final TextEditingController _controller = TextEditingController();
   bool isLoading = false;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+
   User get user => _auth.currentUser!;
 
-  Future pickImageFromGallery() async {
-    final selectedImage =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-
-    setState(
-      () {
-        if (_selectedImg != Null) {
-          _selectedImg = File(selectedImage!.path);
-        } else {
-          return;
-        }
-      },
-    );
+  Future<void> pickImageFromGallery() async {
+    final selectedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
+    
+    if (selectedImage != null) {
+      setState(() {
+        _selectedImg = File(selectedImage.path);
+      });
+    }
   }
 
   Future<void> submitPost() async {
-    if (_selectedImg != null && captionController.text.isNotEmpty) {
-      setState(() {
-        isLoading = true;
-      });
-
-      try {
-        final user = FirebaseAuth.instance.currentUser;
-        if (user != null) {
-          final storageRef = FirebaseStorage.instance.ref().child('post_images/${DateTime.now().toIso8601String()}');
-          await storageRef.putFile(_selectedImg!);
-          final imageUrl = await storageRef.getDownloadURL();
-
-          await FirebaseFirestore.instance.collection('posts').add({
-            'userId': user.uid,
-            'username': user.displayName ?? 'Anonymous',
-            'image_url': imageUrl,
-            'caption': captionController.text,
-            'timestamp': FieldValue.serverTimestamp(),
-          });
-
-          Navigator.of(context).pop();
-        }
-      } catch (e) {
-        // Handle error
-      } finally {
-        setState(() {
-           isLoading = false;
-        });
-      }
+    if (_selectedImg == null || captionController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Selecione uma imagem e adicione uma legenda.')),
+      );
+      return;
     }
-    GoRouter.of(context).go('/home');
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      if (user != null) {
+        final storageRef = _storage.ref().child('post_images/${DateTime.now().toIso8601String()}');
+        await storageRef.putFile(_selectedImg!);
+        final imageUrl = await storageRef.getDownloadURL();
+
+        await _firestore.collection('posts').add({
+          'userId': user.uid,
+          'username': user.displayName ?? 'Anonymous',
+          'image_url': imageUrl,
+          'caption': captionController.text,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        GoRouter.of(context).go('/home');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao postar: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   @override
@@ -92,32 +93,36 @@ class _PostPageState extends State<PostPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: double.infinity,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(25.0),
-                  ),
-                  child: InkWell(
-                    onTap: () {
-                      pickImageFromGallery();
-                    },
+                GestureDetector(
+                  onTap: pickImageFromGallery,
+                  child: Container(
+                    width: double.infinity,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(25.0),
+                    ),
                     child: _selectedImg == null
-                        ? Center(child: Image.asset('assets/null.png'))
-                        : Image.file(_selectedImg!),
+                        ? Center(child: Image.asset('assets/null.png', fit: BoxFit.cover))
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(25.0),
+                            child: Image.file(_selectedImg!, fit: BoxFit.cover),
+                          ),
                   ),
                 ),
+                const SizedBox(height: 20),
                 const Padding(
                   padding: EdgeInsets.all(8.0),
                   child: Text("Descreva a postagem:"),
                 ),
-                CustomTextField(),
-                SizedBox(height: 20),
+                CustomTextField(controller: captionController),
+                const SizedBox(height: 20),
                 Center(
                   child: ElevatedButton(
-                    onPressed: submitPost,
-                    child: Text('Submit Post'),
+                    onPressed: isLoading ? null : submitPost,
+                    child: isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('Postar'),
                   ),
                 ),
               ],
@@ -130,11 +135,17 @@ class _PostPageState extends State<PostPage> {
 }
 
 class CustomTextField extends StatelessWidget {
+  final TextEditingController controller;
+
+  const CustomTextField({super.key, required this.controller});
+
   @override
   Widget build(BuildContext context) {
     return TextField(
-      decoration: InputDecoration(
+      controller: controller,
+      decoration: const InputDecoration(
         border: OutlineInputBorder(),
+        hintText: 'Digite a legenda da postagem...',
       ),
       maxLines: 5,
     );

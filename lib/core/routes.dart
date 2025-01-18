@@ -1,5 +1,3 @@
-// ignore_for_file: constant_identifier_names
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:userapp/pages/bottom_bar_state.dart';
@@ -30,7 +28,7 @@ class RouteNames {
 class AppRountersConfiguration {
   static GoRouter returnRouter() {
     return GoRouter(
-      initialLocation: '/item_register_page',
+      initialLocation: '/inicial',
       routes: [
         GoRoute(
           path: '/inicial',
@@ -45,7 +43,7 @@ class AppRountersConfiguration {
           path: '/email_register',
           name: RouteNames.email_register,
           pageBuilder: (context, state) {
-            return  const MaterialPage(
+            return  MaterialPage(
               child: InstitutionRegisterPage(),
             );
           },
@@ -69,15 +67,22 @@ class AppRountersConfiguration {
           },
         ),
          GoRoute(
-      path: '/item_edit/:itemId',
-      name: RouteNames.item_edit_page,
-      pageBuilder: (context, state) {
-        final itemId = state.pathParameters['itemId']!;
-        return MaterialPage(
-          child: EditItemPage(itemId: itemId),
-        );
-      },
-    ),
+  path: '/item_edit/:itemId',
+  name: RouteNames.item_edit_page,
+  pageBuilder: (context, state) {
+    final itemId = state.pathParameters['itemId'];
+    if (itemId == null) {
+      return const MaterialPage(
+        child: Center(
+          child: Text('Item não encontrado'),
+        ),
+      );
+    }
+    return MaterialPage(
+      child: EditItemPage(itemId: itemId),
+    );
+  },
+),
         GoRoute(
           path: '/legal_entities_login',
           name: RouteNames.legal_entities_login,
@@ -100,7 +105,7 @@ class AppRountersConfiguration {
           path: '/edit_profile',
           name: RouteNames.edit_profile,
           pageBuilder: (context, state) {
-            return  const MaterialPage(
+            return   MaterialPage(
               child: EditProfile(),
             );
           },

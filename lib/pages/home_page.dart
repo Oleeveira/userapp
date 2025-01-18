@@ -11,48 +11,68 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  final currentUser = FirebaseAuth.instance.currentUser!;
+  late Stream<List<PostWithUser>> _postStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _postStream = _fetchPostsWithUserData();
+  }
+
+  
+  Stream<List<PostWithUser>> _fetchPostsWithUserData() {
+    return _firestore.collection('posts').snapshots().asyncMap((snapshot) async {
+      List<PostWithUser> postsWithUsers = [];
+
+      for (var post in snapshot.docs) {
+        final postData = post.data() as Map<String, dynamic>;
+        final userId = postData['userId'];
+
+        
+        final userSnapshot = await _firestore.collection('users').doc(userId).get();
+        final userData = userSnapshot.data() as Map<String, dynamic>? ?? {};
+
+        postsWithUsers.add(
+          PostWithUser(
+            userId: userId,
+            imageUrl: postData['image_url'] ?? '',
+            caption: postData['caption'] ?? '',
+            username: userData['username'] ?? 'Anonymous',
+            avatarUrl: userData['avatar_url'] ?? '',
+          ),
+        );
+      }
+
+      return postsWithUsers;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Home'),
-      ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('posts').snapshots(),
+      appBar: AppBar(title: const Text('Home')),
+      body: StreamBuilder<List<PostWithUser>>(
+        stream: _postStream,
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final posts = snapshot.data!.docs;
+          final posts = snapshot.data!;
 
           return ListView.builder(
             itemCount: posts.length,
             itemBuilder: (context, index) {
               final post = posts[index];
-              final postData = post.data() as Map<String, dynamic>;
-              final userId = postData['userId'];
-
-              return FutureBuilder<DocumentSnapshot>(
-                future: FirebaseFirestore.instance.collection('users').doc(userId).get(),
-                builder: (context, userSnapshot) {
-                  if (!userSnapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  final userData = userSnapshot.data!.data() as Map<String, dynamic>;
-
-                  return PostCardComponent(
-                    userId: userId,
-                    imageUrl: postData['image_url'] ?? '',
-                    caption: postData['caption'] ?? '',
-                    username: userData['username'] ?? 'Anonymous',
-                    avatarUrl: userData['avatar_url'] ?? '',
-                  );
-                },
+              return PostCardComponent(
+                userId: post.userId,
+                imageUrl: post.imageUrl,
+                caption: post.caption,
+                username: post.username,
+                avatarUrl: post.avatarUrl,
               );
             },
           );
@@ -60,6 +80,23 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+}
+
+
+class PostWithUser {
+  final String userId;
+  final String imageUrl;
+  final String caption;
+  final String username;
+  final String avatarUrl;
+
+  PostWithUser({
+    required this.userId,
+    required this.imageUrl,
+    required this.caption,
+    required this.username,
+    required this.avatarUrl,
+  });
 }
 
 class PostCardComponent extends StatelessWidget {
@@ -87,27 +124,13 @@ class PostCardComponent extends StatelessWidget {
         children: [
           ListTile(
             leading: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => OtherEntitiesProfilePage(userId: userId),
-                  ),
-                );
-              },
+              onTap: () => _navigateToProfile(context),
               child: CircleAvatar(
                 backgroundImage: NetworkImage(avatarUrl),
               ),
             ),
             title: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => OtherEntitiesProfilePage(userId: userId),
-                  ),
-                );
-              },
+              onTap: () => _navigateToProfile(context),
               child: Text(username),
             ),
           ),
@@ -120,4 +143,14 @@ class PostCardComponent extends StatelessWidget {
       ),
     );
   }
+
+  void _navigateToProfile(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OtherEntitiesProfilePage(userId: userId),
+      ),
+    );
+  }
 }
+

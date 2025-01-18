@@ -14,7 +14,6 @@ class OtherEntitiesProfilePage extends StatefulWidget {
   State<OtherEntitiesProfilePage> createState() => _OtherEntitiesProfilePageState();
 }
 
-
 class _OtherEntitiesProfilePageState extends State<OtherEntitiesProfilePage> {
   String? username = '';
   String? email = '';
@@ -29,19 +28,26 @@ class _OtherEntitiesProfilePageState extends State<OtherEntitiesProfilePage> {
     getData();
   }
 
- Future<void> getData() async {
-    DocumentSnapshot userData = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.userId)
-        .get();
-    setState(() {
-      username = userData['username'];
-      email = userData['email'];
-      number = userData['number'];
-      image = userData['image'];
-      address = userData['address'];
-      isLoading = false;
-    });
+  Future<void> getData() async {
+    try {
+      DocumentSnapshot userData = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.userId)
+          .get();
+      setState(() {
+        username = userData['username'] ?? 'Anonymous';
+        email = userData['email'] ?? 'Not Available';
+        number = userData['number'] ?? 'Not Available';
+        image = userData['image'] ?? '';
+        address = userData['address'] ?? 'Not Available';
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao carregar dados do perfil.')));
+    }
   }
 
   @override
@@ -58,31 +64,20 @@ class _OtherEntitiesProfilePageState extends State<OtherEntitiesProfilePage> {
                     children: [
                       Container(
                         margin: const EdgeInsets.only(bottom: 20.0),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 20),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                         child: Column(
                           children: [
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                "Meu Perfil",
-                                style: textStyle(32, FontWeight.w900),
-                              ),
-                            ),
                             Row(
                               children: [
                                 Padding(
-                                  padding: const EdgeInsets.only(
-                                      right: 8.0, top: 3.0),
+                                  padding: const EdgeInsets.only(right: 8.0, top: 3.0),
                                   child: Material(
                                     child: Center(
                                       child: CircleAvatar(
                                         radius: 50.0,
                                         backgroundImage: image != null
                                             ? NetworkImage(image!)
-                                            : const AssetImage(
-                                                    'assets/default_profile.jpg')
-                                                as ImageProvider,
+                                            : const AssetImage('assets/default_profile.jpg') as ImageProvider,
                                       ),
                                     ),
                                   ),
@@ -107,14 +102,12 @@ class _OtherEntitiesProfilePageState extends State<OtherEntitiesProfilePage> {
                                     ),
                                     Row(
                                       children: [
-                                        const Icon(
-                                            Icons.phone_in_talk_outlined),
+                                        const Icon(Icons.phone_in_talk_outlined),
                                         Opacity(
                                           opacity: 0.7,
                                           child: Text(
                                             "$number",
-                                            style: textStyle(
-                                                14, FontWeight.normal),
+                                            style: textStyle(14, FontWeight.normal),
                                           ),
                                         ),
                                       ],
@@ -143,9 +136,7 @@ class _OtherEntitiesProfilePageState extends State<OtherEntitiesProfilePage> {
                               child: Align(
                                 alignment: Alignment.centerLeft,
                                 child: Text("Suas Necessidades",
-                                    style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w900)),
+                                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
                               ),
                             ),
                             StreamBuilder<QuerySnapshot>(
@@ -156,8 +147,7 @@ class _OtherEntitiesProfilePageState extends State<OtherEntitiesProfilePage> {
                                   .snapshots(),
                               builder: (context, snapshot) {
                                 if (!snapshot.hasData) {
-                                  return const Center(
-                                      child: CircularProgressIndicator());
+                                  return const Center(child: CircularProgressIndicator());
                                 }
                                 final items = snapshot.data!.docs;
                                 return Column(
@@ -177,9 +167,7 @@ class _OtherEntitiesProfilePageState extends State<OtherEntitiesProfilePage> {
                               child: Align(
                                 alignment: Alignment.centerLeft,
                                 child: Text("Visitas",
-                                    style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w900)),
+                                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
                               ),
                             ),
                           ],
@@ -193,4 +181,11 @@ class _OtherEntitiesProfilePageState extends State<OtherEntitiesProfilePage> {
       ),
     );
   }
+}
+
+TextStyle textStyle(double size, FontWeight weight) {
+  return TextStyle(
+    fontSize: size,
+    fontWeight: weight,
+  );
 }

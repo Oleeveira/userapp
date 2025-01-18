@@ -25,21 +25,29 @@ class _EditItemPageState extends State<EditItemPage> {
   }
 
   void fetchItemData() async {
-    final itemData = await FirebaseFirestore.instance.collection('items').doc(widget.itemId).get();
-    setState(() {
-      nameController.text = itemData['name'];
-      descController.text = itemData['description'];
-      qtdController.text = itemData['quantity'].toString();
-      selectedCategory = itemData['category'];
-      isLoading = false;
-    });
+    try {
+      final itemData = await FirebaseFirestore.instance.collection('items').doc(widget.itemId).get();
+      if (itemData.exists) {
+        setState(() {
+          nameController.text = itemData['name'];
+          descController.text = itemData['description'];
+          qtdController.text = itemData['quantity'].toString();
+          selectedCategory = itemData['category'];
+          isLoading = false;
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item não encontrado!')));
+      }
+    } catch (e) { 
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erro ao carregar item')));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Item'),
+        title: const Text('Editar Item'),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -51,23 +59,26 @@ class _EditItemPageState extends State<EditItemPage> {
                   const Text('Nome do produto'),
                   TextField(
                     controller: nameController,
+                    decoration: const InputDecoration(border: OutlineInputBorder()),
                   ),
                   const SizedBox(height: 20),
                   const Text('Descrição'),
                   TextField(
                     controller: descController,
+                    decoration: const InputDecoration(border: OutlineInputBorder()),
                   ),
                   const SizedBox(height: 20),
                   const Text('Quantidade'),
                   TextField(
                     controller: qtdController,
                     keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(border: OutlineInputBorder()),
                   ),
                   const SizedBox(height: 20),
                   const Text('Categoria'),
                   CustomDropDownButtonComponent(
                     selected: selectedCategory,
-                    items: ['Category 1', 'Category 2', 'Category 3'], // Example categories
+                    items: ['Category 1', 'Category 2', 'Category 3'], 
                     hint: 'Selecione uma opção',
                     onChanged: (item) {
                       setState(() {
@@ -89,6 +100,10 @@ class _EditItemPageState extends State<EditItemPage> {
   }
 
   void saveItem() async {
+    if (nameController.text.isEmpty || descController.text.isEmpty || qtdController.text.isEmpty || selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor, preencha todos os campos')));
+      return;
+    }
     await FirebaseFirestore.instance.collection('items').doc(widget.itemId).update({
       'name': nameController.text,
       'description': descController.text,

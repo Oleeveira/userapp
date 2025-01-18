@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:userapp/components/custom_text_field.dart';
 import 'package:userapp/resources/text_style.dart';
+import 'package:userapp/services/firestore_methods.dart';
 
 import '../components/rounded_background_component.dart';
 
@@ -15,47 +16,6 @@ class ItemRegisterPage extends StatefulWidget {
 }
 
 class _ItemRegisterPageState extends State<ItemRegisterPage> {
-
-
-
-
-  /*Future createItem() async {
-    if (_formKey.currentState!.validate()) {
-      final newItem = FirebaseFirestore.instance.collection('items');
-      final currentUser = FirebaseAuth.instance.currentUser;
-
-      final item = Item(
-          id: newItem.id,
-          nome: nameController.text,
-          descricao: descController.text,
-          quantidade: qtdController.text,
-          categoria: categoryController.text,
-          usuarioId: currentUser!.uid,
-          statusDoacaoId: 1,
-          dataDeCadastro: DateTime.now());
-
-          final json = item.toJson();
-
-          await newItem.get(json);
-    }
-  }*/
-
-  /*Future signItem() async{
-    FirebaseFirestore.instance
-    .collection('itens')
-    .where("userId", isEqualTo: user?uid)
-    .get()
-    .then((ds){
-      ds.docs.forEach((data){
-        var tempList = {
-          'name' = nameController.text
-        };
-      }
-      )
-    }
-    
-    )
-  }*/
 
   
 
@@ -142,34 +102,10 @@ class DonationItemComponent extends StatefulWidget {
 class _DonationItemComponentState extends State<DonationItemComponent> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController qtdController = TextEditingController();
+  final TextEditingController descController = TextEditingController();
   String? selectedCategory;
   final List<String> categories = ['Alimento', 'Eletrônico', 'Vestimenta', 'Higiene', 'Outros'];
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final TextEditingController descController = TextEditingController();
-  
-
-      Future<void> signUpItem() async {
-    User? user = _auth.currentUser;
-    if (user != null) {
-      String userId = user.uid;
-
-      DocumentReference docRef = _firestore.collection('items').doc(userId).collection('user_items').doc();
-
-      await docRef.set({
-        'name': nameController.text,
-        'qtd': qtdController.text,
-        'category': selectedCategory,
-        'desc': descController.text,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Item registered successfully')));
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('User not logged in')));
-    }
-  }
-
+  final FirestoreMethods _firestoreMethods = FirestoreMethods();
 
   @override
   void dispose() {
@@ -179,75 +115,93 @@ class _DonationItemComponentState extends State<DonationItemComponent> {
     super.dispose();
   }
 
+  Future<void> registerItem() async {
+    if (selectedCategory == null || nameController.text.isEmpty || qtdController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Preencha todos os campos obrigatórios")),
+      );
+      return;
+    }
+
+    try {
+      await _firestoreMethods.registerNewItem(
+        name: nameController.text,
+        quantity: qtdController.text,
+        category: selectedCategory!,
+        description: descController.text,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Item registrado com sucesso")),
+      );
+
+      GoRouter.of(context).go('/bar_state');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erro ao registrar item: $e")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: Listenable.merge([qtdController]),
-      builder: (_, __) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Nome do produto'),
+        CustomTextField(type: TextInputType.name, controller: nameController),
+        const SizedBox(height: 20),
+        const Text('Descrição'),
+        CustomTextField(type: TextInputType.multiline, controller: descController),
+        const SizedBox(height: 20),
+        const Text('Categoria e Quantidade'),
+        Row(
           children: [
-            const Text('Nome do produto'),
-            CustomTextField(
-                type: TextInputType.name, controller: nameController),
-            const SizedBox(height: 20),
-            const Text('Descrição'),
-            CustomTextField(
-                type: TextInputType.multiline, controller: descController),
-            const SizedBox(height: 20),
-            const Text('Categoria e Quantidade'),
-            Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(15.0),
-                  child: CustomDropDownButtonComponent(
-              selected: selectedCategory,
-              items: categories,
-              hint: 'Selecione uma opção',
-              onChanged: (item) {
-                setState(() {
-                  selectedCategory = item;
-                });
-              },
+            Padding(
+              padding: const EdgeInsets.all(15.0),
+              child: CustomDropDownButtonComponent(
+                selected: selectedCategory,
+                items: categories,
+                hint: 'Selecione uma opção',
+                onChanged: (item) {
+                  setState(() {
+                    selectedCategory = item;
+                  });
+                },
+              ),
             ),
-                ),
-                Flexible(
-                  child: CustomTextField(
-                    controller: qtdController,
-                    type: TextInputType.number,
+            Flexible(
+              child: CustomTextField(
+                controller: qtdController,
+                type: TextInputType.number,
+              ),
+            ),
+          ],
+        ),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 180.0),
+            child: SizedBox(
+              height: 70,
+              width: 400,
+              child: ElevatedButton(
+                onPressed: registerItem, 
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigo.shade900,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15.0),
                   ),
                 ),
-              ],
-            ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 180.0),
-                child: SizedBox(
-                  height: 70,
-                  width: 400,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      signUpItem();
-                      GoRouter.of(context).go('/bar_state');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.indigo.shade900,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15.0),
-                      ),
-                    ),
-                    child: const Text(
-                      'Continuar',
-                      style: TextStyle(color: Colors.white, fontSize: 20.0),
-                    ),
-                  ),
+                child: const Text(
+                  'Continuar',
+                  style: TextStyle(color: Colors.white, fontSize: 20.0),
                 ),
               ),
-            )
-          ],
-        );
-      },
+            ),
+          ),
+        )
+      ],
     );
   }
 }

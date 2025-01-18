@@ -79,7 +79,7 @@ class InicialPage extends StatelessWidget {
     return Wrap(children: <Widget>[
               ListTile(
     leading:  const Icon(Icons.mail_outline),
-    title:  const Text('Entre com telefone'),  iconColor: Colors.blueGrey,
+    title:  const Text('Entre com email'),  iconColor: Colors.blueGrey,
     onTap: () => {Navigator.pop(context),
       GoRouter.of(context).go('/legal_entities_login')},          
               ),
@@ -103,8 +103,8 @@ void _opcoesCadastro(context){
   showModalBottomSheet(context: context, builder: (BuildContext bc){
     return Wrap(children: <Widget>[
               ListTile(
-    leading:  const Icon(Icons.phone_in_talk_outlined),
-    title:  const Text('Cadastrar-se com telefone'),  iconColor: Colors.blueGrey,
+    leading:  const Icon(Icons.mail_outline),
+    title:  const Text('Cadastrar-se com email'),  iconColor: Colors.blueGrey,
     onTap: () => { Navigator.pop(context),
       GoRouter.of(context).go('/email_register')},          
               ),

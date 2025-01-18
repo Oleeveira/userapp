@@ -49,7 +49,7 @@ class _LegalEntitiesLoginPageState extends State<LegalEntitiesLoginPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            GoRouter.of(context).go('/initial_page');
+            GoRouter.of(context).go('/inicial');
           },
         ),
       ),

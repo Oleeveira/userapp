@@ -13,38 +13,42 @@ class BottomBar extends StatefulWidget {
 
 class _BottomBarState extends State<BottomBar> {
   int currentPageIndex = 0;
-  List<Widget> body = [
+
+  final List<Widget> body = [
     const HomePage(),
-    const PopupMenuState(),
+    Container(), 
     const LegalEntitiesProfilePage(),
   ];
 
   void onTabTapped(int index) {
-    setState(() {
-      
-      currentPageIndex = index;
-      
-    });
+    if (index == 1) {
+      _optionsAdd(context); 
+    } else {
+      setState(() {
+        currentPageIndex = index;
+      });
+    }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: body[currentPageIndex],
       bottomNavigationBar: BottomNavigationBar(
-				currentIndex: currentPageIndex,
+        currentIndex: currentPageIndex,
         onTap: onTabTapped,
         items: const [
-           BottomNavigationBarItem(
+          BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: '',
             backgroundColor: Color.fromARGB(213, 66, 117, 165),
           ),
-           BottomNavigationBarItem(
-            icon: Icon(Icons.add, ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add),
             label: '',
             backgroundColor: Color.fromARGB(213, 66, 117, 165),
           ),
-           BottomNavigationBarItem(
+          BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: '',
             backgroundColor: Color.fromARGB(213, 66, 117, 165),
@@ -53,23 +57,32 @@ class _BottomBarState extends State<BottomBar> {
       ),
     );
   }
-}
 
- _optionsadd(context) {
-   showModalBottomSheet(context: context, builder: (BuildContext bc){
-    return Wrap(children: <Widget>[
-    	        ListTile(
-    	          leading:  const Icon(Icons.g_mobiledata_outlined),
-    	          title:  const Text('Necessidade'),  iconColor: Colors.black,
-    	          onTap: () => {GoRouter.of(context).go('/item_register_page')}, 
-    	        ),
-              ListTile(
-    	          leading:  const Icon(Icons.facebook),
-    	          title:  const Text('Visita'),  iconColor: Colors.black,
-    	          onTap: () => {}, 
-    	        ),
-             ],
-            );   
-    }
-  );
+ 
+  void _optionsAdd(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext bc) {
+        return Wrap(
+          children: <Widget>[
+            ListTile(
+              title: const Text('Necessidade'),
+              iconColor: Colors.black,
+              onTap: () {
+                Navigator.pop(context);  
+                GoRouter.of(context).go('/item_register_page');
+              },
+            ),
+            ListTile(
+              title: const Text('Visita'),
+              onTap: () {
+                Navigator.pop(context);
+                GoRouter.of(context).go('/post_page');
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 }

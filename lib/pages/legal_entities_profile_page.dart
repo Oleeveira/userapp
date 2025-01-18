@@ -48,43 +48,63 @@ class LegalEntitiesProfilePageState extends State<LegalEntitiesProfilePage> {
 
   Future selectFile() async {
     final result = await FilePicker.platform.pickFiles();
+    if (result == null || result.files.isEmpty) return;
+
     setState(() {
-      pickedFile = result?.files.first;
+      pickedFile = result.files.first;
     });
   }
 
   Future<void> uploadFile() async {
-    if (pickedFile == null) return;
+    if (pickedFile == null || _auth.currentUser == null) return;
 
-    final path = 'userProfilePictures/${user!.uid}/${pickedFile!.name}';
-    final file = File(pickedFile!.path!);
-    final ref = FirebaseStorage.instance.ref().child(path);
-    uploadTask = ref.putFile(file);
+    try {
+      final path =
+          'userProfilePictures/${_auth.currentUser!.uid}/${pickedFile!.name}';
+      final file = File(pickedFile!.path!);
+      final ref = FirebaseStorage.instance.ref().child(path);
 
-    final taskSnapshot = await uploadTask!.whenComplete(() => null);
-    final downloadURL = await taskSnapshot.ref.getDownloadURL();
+      setState(() {
+        uploadTask = ref.putFile(file);
+      });
 
-    // Update the user's Firestore document with the download URL
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-      'image': downloadURL,
-    });
+      final taskSnapshot = await uploadTask!.whenComplete(() => null);
+      final downloadURL = await taskSnapshot.ref.getDownloadURL();
 
-    setState(() {
-      image = downloadURL;
-    });
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .update({
+        'image': downloadURL,
+      });
+
+      setState(() {
+        image = downloadURL;
+      });
+    } catch (e) {
+      print("Upload error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erro ao fazer upload da imagem")),
+      );
+    } finally {
+      setState(() {
+        uploadTask = null;
+      });
+    }
   }
 
   Future<void> getData() async {
-    if (user != null) {
+    if (_auth.currentUser != null) {
       DocumentSnapshot userData = await FirebaseFirestore.instance
           .collection('users')
-          .doc(user!.uid)
+          .doc(_auth.currentUser!.uid) // Safer access
           .get();
       setState(() {
-        username = userData['username'];
-        number = userData['number'];
+        username = userData['username'] ?? '';
+        number = userData['number'] ?? '';
         image = userData['image'] ?? '';
-        address = userData['address'];
+        address = userData['address'] ?? '';
+        isLoading = false;
       });
     }
   }
@@ -133,11 +153,13 @@ class LegalEntitiesProfilePageState extends State<LegalEntitiesProfilePage> {
                                     child: Center(
                                       child: CircleAvatar(
                                         radius: 50.0,
-                                        backgroundImage: image != null
+                                        backgroundImage: (image != null &&
+                                                image!.isNotEmpty)
                                             ? NetworkImage(image!)
+                                                as ImageProvider<Object>
                                             : const AssetImage(
                                                     'assets/default_profile.jpg')
-                                                as ImageProvider,
+                                                as ImageProvider<Object>,
                                       ),
                                     ),
                                   ),
@@ -210,18 +232,42 @@ class LegalEntitiesProfilePageState extends State<LegalEntitiesProfilePage> {
                                   .limit(3)
                                   .snapshots(),
                               builder: (context, snapshot) {
-                                if (!snapshot.hasData) {
+                                if (snapshot.hasError) {
+                                  return Center(
+                                      child: Text("Erro ao carregar os itens"));
+                                }
+
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
                                   return const Center(
                                       child: CircularProgressIndicator());
                                 }
+
+                                if (!snapshot.hasData ||
+                                    snapshot.data!.docs.isEmpty) {
+                                  return Center(
+                                      child: Text("Nenhum item cadastrado"));
+                                }
+
                                 final items = snapshot.data!.docs;
+
                                 return Column(
                                   children: items.map((item) {
+                                    final data =
+                                        item.data() as Map<String, dynamic>?;
+                                    final itemName =
+                                        data?['name'] ?? 'Desconhecido';
+                                    final itemDescription =
+                                        data?['description'] ?? '';
+                                    final itemQuantity = data?['quantity'] ?? 0;
+                                    final itemCategory =
+                                        data?['category'] ?? '';
+
                                     return ItemCardComponent(
-                                      itemName: item['name'],
-                                      itemDescription: item['description'],
-                                      itemQuantity: item['quantity'],
-                                      itemCategory: item['category'],
+                                      itemName: itemName,
+                                      itemDescription: itemDescription,
+                                      itemQuantity: itemQuantity,
+                                      itemCategory: itemCategory,
                                     );
                                   }).toList(),
                                 );
